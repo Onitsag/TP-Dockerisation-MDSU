@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String       @id @default(uuid())
+  username      String       @unique
+  email         String       @unique
+  password      String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  tournaments   Tournament[] @relation("TournamentParticipants")
+  organized     Tournament[] @relation("TournamentOrganizer")
+}
+
+model Tournament {
+  id                String     @id @default(uuid())
+  name             String
+  game             String
+  format           Format
+  date             DateTime
+  maxParticipants  Int
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  organizer        User       @relation("TournamentOrganizer", fields: [organizerId], references: [id])
+  organizerId      String
+  participants     User[]     @relation("TournamentParticipants")
+}
+
+enum Format {
+  SOLO
+  DUO
+  TEAM
+}
