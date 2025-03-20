@@ -1,0 +1,1275 @@
+📁 Arborescence du projet
+
+├── src
+│   ├── assets
+│   │   └── hero-bg.jpg
+│   ├── components
+│   │   ├── Navbar.tsx
+│   │   └── ProtectedRoute.tsx
+│   ├── hooks
+│   │   ├── useAuth.ts
+│   │   └── useTournaments.ts
+│   ├── lib
+│   │   └── utils.ts
+│   ├── pages
+│   │   ├── CreateTournament.tsx
+│   │   ├── Home.tsx
+│   │   ├── Login.tsx
+│   │   ├── Register.tsx
+│   │   └── Tournaments.tsx
+│   ├── services
+│   │   ├── api.ts
+│   │   ├── auth.ts
+│   │   └── tournaments.ts
+│   ├── store
+│   │   └── authStore.ts
+│   ├── types
+│   │   └── index.ts
+│   ├── App.tsx
+│   ├── index.css
+│   ├── main.tsx
+│   └── vite-env.d.ts
+├── .gitignore
+├── eslint.config.js
+├── index.html
+├── package.json
+├── postcss.config.js
+├── tailwind.config.js
+├── tsconfig.app.json
+├── tsconfig.json
+├── tsconfig.node.json
+└── vite.config.ts
+
+📄 Contenu des fichiers
+
+.gitignore:
+```
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+```
+
+eslint.config.js:
+```
+import js from '@eslint/js';
+import globals from 'globals';
+import reactHooks from 'eslint-plugin-react-hooks';
+import reactRefresh from 'eslint-plugin-react-refresh';
+import tseslint from 'typescript-eslint';
+
+export default tseslint.config(
+  { ignores: ['dist'] },
+  {
+    extends: [js.configs.recommended, ...tseslint.configs.recommended],
+    files: ['**/*.{ts,tsx}'],
+    languageOptions: {
+      ecmaVersion: 2020,
+      globals: globals.browser,
+    },
+    plugins: {
+      'react-hooks': reactHooks,
+      'react-refresh': reactRefresh,
+    },
+    rules: {
+      ...reactHooks.configs.recommended.rules,
+      'react-refresh/only-export-components': [
+        'warn',
+        { allowConstantExport: true },
+      ],
+    },
+  }
+);
+
+```
+
+index.html:
+```
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>NiceTry - Plateforme de Tournois Gaming</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+```
+
+package.json:
+```
+{
+  "name": "gaming-tournament-platform",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@hookform/resolvers": "^3.3.4",
+    "axios": "^1.6.7",
+    "clsx": "^2.1.0",
+    "date-fns": "^3.3.1",
+    "inquirer": "^12.5.0",
+    "lucide-react": "^0.344.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-hook-form": "^7.51.0",
+    "react-hot-toast": "^2.4.1",
+    "react-router-dom": "^6.22.2",
+    "tailwind-merge": "^2.2.1",
+    "zod": "^3.22.4",
+    "zustand": "^4.5.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.9.1",
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.1",
+    "autoprefixer": "^10.4.18",
+    "eslint": "^9.9.1",
+    "eslint-plugin-react-hooks": "^5.1.0-rc.0",
+    "eslint-plugin-react-refresh": "^0.4.11",
+    "globals": "^15.9.0",
+    "postcss": "^8.4.35",
+    "tailwindcss": "^3.4.1",
+    "typescript": "^5.5.3",
+    "typescript-eslint": "^8.3.0",
+    "vite": "^5.4.2"
+  }
+}
+
+```
+
+postcss.config.js:
+```
+export default {
+  plugins: {
+    tailwindcss: {},
+    autoprefixer: {},
+  },
+};
+
+```
+
+src\App.tsx:
+```
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { Navbar } from './components/Navbar';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { Home } from './pages/Home';
+import { Tournaments } from './pages/Tournaments';
+import { CreateTournament } from './pages/CreateTournament';
+import { Login } from './pages/Login';
+import { Register } from './pages/Register';
+
+function App() {
+  return (
+    <Router>
+      <div className="min-h-screen bg-game-background text-white">
+        <Navbar />
+        <main className="pt-16">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/tournaments" element={<Tournaments />} />
+            <Route 
+              path="/create-tournament" 
+              element={
+                <ProtectedRoute>
+                  <CreateTournament />
+                </ProtectedRoute>
+              } 
+            />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+          </Routes>
+        </main>
+        <Toaster
+          position="top-right"
+          toastOptions={{
+            className: 'bg-game-foreground text-white',
+            style: {
+              background: '#1E293B',
+              color: '#fff',
+              border: '1px solid rgba(109, 40, 217, 0.2)',
+            },
+          }}
+        />
+      </div>
+    </Router>
+  );
+}
+
+export default App;
+```
+
+src\assets\hero-bg.jpg:
+```
+[CONTENU NON AFFICHÉ - FICHIER BINAIRE]
+```
+
+src\components\Navbar.tsx:
+```
+import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { GamepadIcon, LogOut, Home } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
+
+export function Navbar() {
+  const { isAuthenticated, logout } = useAuthStore();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    logout();
+    navigate('/');
+  };
+
+  return (
+    <nav className="bg-game-foreground/95 backdrop-blur-sm fixed w-full z-50 top-0 left-0 border-b border-game-primary/20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          <div className="flex items-center space-x-8">
+            <Link to="/" className="flex items-center space-x-2">
+              <GamepadIcon className="h-8 w-8 text-game-accent" />
+              <span className="font-gaming text-xl text-white">NiceTry</span>
+            </Link>
+
+            <div className="hidden md:flex items-center space-x-4">
+              <Link
+                to="/"
+                className="flex items-center space-x-2 text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+              >
+                <Home className="h-4 w-4" />
+                <span>Accueil</span>
+              </Link>
+              <Link
+                to="/tournaments"
+                className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Tournois
+              </Link>
+              <Link
+                to="/create-tournament"
+                className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+              >
+                Créer un tournoi
+              </Link>
+            </div>
+          </div>
+
+          <div>
+            {!isAuthenticated ? (
+              <Link
+                to="/login"
+                className="bg-game-primary text-white px-4 py-2 rounded-md text-sm font-medium hover:bg-game-secondary transition-colors"
+              >
+                Connexion
+              </Link>
+            ) : (
+              <button
+                onClick={handleLogout}
+                className="flex items-center space-x-2 text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium"
+              >
+                <LogOut className="h-4 w-4" />
+                <span>Déconnexion</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+}
+```
+
+src\components\ProtectedRoute.tsx:
+```
+import { Navigate } from 'react-router-dom';
+import { useAuthStore } from '../store/authStore';
+
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
+
+export function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { isAuthenticated } = useAuthStore();
+
+  if (!isAuthenticated) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <>{children}</>;
+}
+```
+
+src\hooks\useAuth.ts:
+```
+import { useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-hot-toast';
+import { useAuthStore } from '../store/authStore';
+import { authService, LoginData, RegisterData } from '../services/auth';
+
+export function useAuth() {
+  const navigate = useNavigate();
+  const { login: setUser, logout: clearUser } = useAuthStore();
+
+  const loginUser = useCallback(async (data: LoginData) => {
+    try {
+      const response = await authService.login(data);
+      setUser(response.user);
+      toast.success('Connexion réussie !');
+      navigate('/tournaments');
+    } catch (error) {
+      toast.error('Email ou mot de passe incorrect');
+    }
+  }, [navigate, setUser]);
+
+  const registerUser = useCallback(async (data: RegisterData) => {
+    try {
+      const response = await authService.register(data);
+      setUser(response.user);
+      toast.success('Inscription réussie !');
+      navigate('/tournaments');
+    } catch (error) {
+      toast.error('Une erreur est survenue lors de l\'inscription');
+    }
+  }, [navigate, setUser]);
+
+  const logoutUser = useCallback(() => {
+    authService.logout();
+    clearUser();
+    toast.success('Déconnexion réussie');
+    navigate('/');
+  }, [navigate, clearUser]);
+
+  return { loginUser, registerUser, logoutUser };
+}
+```
+
+src\hooks\useTournaments.ts:
+```
+import { useState, useCallback } from 'react';
+import { toast } from 'react-hot-toast';
+import { tournamentService, CreateTournamentData } from '../services/tournaments';
+import { Tournament } from '../types';
+
+export function useTournaments() {
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const fetchTournaments = useCallback(async () => {
+    try {
+      setLoading(true);
+      const data = await tournamentService.getAll();
+      setTournaments(data);
+    } catch (error) {
+      toast.error('Erreur lors du chargement des tournois');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const createTournament = useCallback(async (data: CreateTournamentData) => {
+    try {
+      const newTournament = await tournamentService.create(data);
+      setTournaments(prev => [...prev, newTournament]);
+      toast.success('Tournoi créé avec succès !');
+      return true;
+    } catch (error) {
+      toast.error('Erreur lors de la création du tournoi');
+      return false;
+    }
+  }, []);
+
+  const joinTournament = useCallback(async (tournamentId: string) => {
+    try {
+      const updatedTournament = await tournamentService.join(tournamentId);
+      setTournaments(prev =>
+        prev.map(t => t.id === tournamentId ? updatedTournament : t)
+      );
+      toast.success('Inscription au tournoi réussie !');
+    } catch (error) {
+      toast.error('Erreur lors de l\'inscription au tournoi');
+    }
+  }, []);
+
+  const leaveTournament = useCallback(async (tournamentId: string) => {
+    try {
+      const updatedTournament = await tournamentService.leave(tournamentId);
+      setTournaments(prev =>
+        prev.map(t => t.id === tournamentId ? updatedTournament : t)
+      );
+      toast.success('Désinscription du tournoi réussie');
+    } catch (error) {
+      toast.error('Erreur lors de la désinscription du tournoi');
+    }
+  }, []);
+
+  return {
+    tournaments,
+    loading,
+    fetchTournaments,
+    createTournament,
+    joinTournament,
+    leaveTournament,
+  };
+}
+```
+
+src\index.css:
+```
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Orbitron:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply antialiased;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-game-primary hover:bg-game-secondary text-white font-medium py-2 px-4 rounded-md transition-colors;
+  }
+  
+  .btn-secondary {
+    @apply bg-game-foreground hover:bg-game-foreground/80 text-white font-medium py-2 px-4 rounded-md transition-colors;
+  }
+
+  .input-field {
+    @apply bg-game-foreground border border-game-primary/20 rounded-md px-4 py-2 text-white focus:outline-none focus:ring-2 focus:ring-game-accent/50;
+  }
+}
+```
+
+src\lib\utils.ts:
+```
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+```
+
+src\main.tsx:
+```
+import { StrictMode } from 'react';
+import { createRoot } from 'react-dom/client';
+import App from './App.tsx';
+import './index.css';
+
+createRoot(document.getElementById('root')!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>
+);
+
+```
+
+src\pages\CreateTournament.tsx:
+```
+import React from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useTournaments } from '../hooks/useTournaments';
+import { useNavigate } from 'react-router-dom';
+
+const tournamentSchema = z.object({
+  name: z.string().min(3, 'Le nom doit contenir au moins 3 caractères'),
+  game: z.string().min(1, 'Le jeu est requis'),
+  format: z.enum(['SOLO', 'DUO', 'TEAM']),
+  date: z.string().min(1, 'La date est requise'),
+  maxParticipants: z.number().min(2, 'Minimum 2 participants').max(128, 'Maximum 128 participants'),
+});
+
+type TournamentFormData = z.infer<typeof tournamentSchema>;
+
+export function CreateTournament() {
+  const { createTournament } = useTournaments();
+  const navigate = useNavigate();
+  const { register, handleSubmit, formState: { errors } } = useForm<TournamentFormData>({
+    resolver: zodResolver(tournamentSchema),
+    defaultValues: {
+      maxParticipants: 16,
+    },
+  });
+
+  const onSubmit = async (data: TournamentFormData) => {
+    const success = await createTournament(data);
+    if (success) {
+      navigate('/tournaments');
+    }
+  };
+
+  return (
+    <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <h1 className="text-3xl font-gaming font-bold mb-8">Créer un Tournoi</h1>
+      
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-game-foreground p-6 rounded-lg">
+        <div>
+          <label htmlFor="name" className="block text-sm font-medium mb-2">
+            Nom du tournoi
+          </label>
+          <input
+            type="text"
+            id="name"
+            {...register('name')}
+            className="input-field w-full"
+            placeholder="Ex: Tournoi League of Legends Summer Split"
+          />
+          {errors.name && (
+            <p className="mt-1 text-sm text-red-400">{errors.name.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="game" className="block text-sm font-medium mb-2">
+            Jeu
+          </label>
+          <input
+            type="text"
+            id="game"
+            {...register('game')}
+            className="input-field w-full"
+            placeholder="Ex: League of Legends"
+          />
+          {errors.game && (
+            <p className="mt-1 text-sm text-red-400">{errors.game.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="format" className="block text-sm font-medium mb-2">
+            Format
+          </label>
+          <select 
+            id="format" 
+            {...register('format')}
+            className="input-field w-full"
+          >
+            <option value="SOLO">Solo</option>
+            <option value="DUO">Duo</option>
+            <option value="TEAM">Équipe</option>
+          </select>
+          {errors.format && (
+            <p className="mt-1 text-sm text-red-400">{errors.format.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="date" className="block text-sm font-medium mb-2">
+            Date du tournoi
+          </label>
+          <input
+            type="datetime-local"
+            id="date"
+            {...register('date')}
+            className="input-field w-full"
+          />
+          {errors.date && (
+            <p className="mt-1 text-sm text-red-400">{errors.date.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="maxParticipants" className="block text-sm font-medium mb-2">
+            Nombre maximum de participants
+          </label>
+          <input
+            type="number"
+            id="maxParticipants"
+            {...register('maxParticipants', { valueAsNumber: true })}
+            className="input-field w-full"
+            min="2"
+            step="2"
+          />
+          {errors.maxParticipants && (
+            <p className="mt-1 text-sm text-red-400">{errors.maxParticipants.message}</p>
+          )}
+        </div>
+
+        <button type="submit" className="btn-primary w-full">
+          Créer le tournoi
+        </button>
+      </form>
+    </div>
+  );
+}
+```
+
+src\pages\Home.tsx:
+```
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Trophy, Users, GamepadIcon } from 'lucide-react';
+
+export function Home() {
+  const navigate = useNavigate();
+
+  return (
+    <div>
+      {/* Hero Section */}
+      <section className="relative h-[600px]">
+        <div className="absolute inset-0 bg-hero-pattern bg-cover bg-center bg-no-repeat">
+          <div className="absolute inset-0 bg-game-background/80 backdrop-blur-sm">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20">
+              <div className="text-center">
+                <h1 className="text-4xl sm:text-6xl font-gaming font-bold text-white mb-6">
+                  NiceTry
+                  <span className="text-game-accent">.</span>
+                </h1>
+                <p className="text-xl text-gray-300 max-w-2xl mx-auto mb-8">
+                  Organisez et participez à des tournois de jeux vidéo épiques. 
+                  Affrontez les meilleurs joueurs et devenez une légende.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-4 justify-center">
+                  <button
+                    onClick={() => navigate('/tournaments')}
+                    className="btn-primary flex items-center justify-center space-x-2"
+                  >
+                    <Trophy className="h-5 w-5" />
+                    <span>Voir les tournois</span>
+                  </button>
+                  <button
+                    onClick={() => navigate('/create-tournament')}
+                    className="btn-secondary flex items-center justify-center space-x-2"
+                  >
+                    <GamepadIcon className="h-5 w-5" />
+                    <span>Organiser un tournoi</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="bg-game-foreground py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="bg-game-background p-6 rounded-lg transform hover:scale-105 transition-transform duration-300">
+              <Trophy className="h-12 w-12 text-game-accent mb-4" />
+              <h3 className="text-xl font-gaming font-semibold mb-2">Compétitions Épiques</h3>
+              <p className="text-gray-400">
+                Participez à des tournois compétitifs dans vos jeux préférés
+              </p>
+            </div>
+            <div className="bg-game-background p-6 rounded-lg transform hover:scale-105 transition-transform duration-300">
+              <Users className="h-12 w-12 text-game-accent mb-4" />
+              <h3 className="text-xl font-gaming font-semibold mb-2">Communauté Active</h3>
+              <p className="text-gray-400">
+                Rejoignez une communauté passionnée de gamers
+              </p>
+            </div>
+            <div className="bg-game-background p-6 rounded-lg transform hover:scale-105 transition-transform duration-300">
+              <GamepadIcon className="h-12 w-12 text-game-accent mb-4" />
+              <h3 className="text-xl font-gaming font-semibold mb-2">Tous les Formats</h3>
+              <p className="text-gray-400">
+                Solo, duo ou équipe - trouvez le format qui vous convient
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
+```
+
+src\pages\Login.tsx:
+```
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useAuth } from '../hooks/useAuth';
+
+const loginSchema = z.object({
+  email: z.string().email('Email invalide'),
+  password: z.string().min(1, 'Le mot de passe est requis'),
+});
+
+type LoginFormData = z.infer<typeof loginSchema>;
+
+export function Login() {
+  const { loginUser } = useAuth();
+  const { register, handleSubmit, formState: { errors } } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema)
+  });
+
+  const onSubmit = async (data: LoginFormData) => {
+    await loginUser(data);
+  };
+
+  return (
+    <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <h1 className="text-3xl font-gaming font-bold text-center mb-8">Connexion</h1>
+      
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-game-foreground p-6 rounded-lg">
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium mb-2">
+            Email
+          </label>
+          <input
+            type="email"
+            id="email"
+            {...register('email')}
+            className="input-field w-full"
+            placeholder="vous@exemple.com"
+          />
+          {errors.email && (
+            <p className="mt-1 text-sm text-red-400">{errors.email.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium mb-2">
+            Mot de passe
+          </label>
+          <input
+            type="password"
+            id="password"
+            {...register('password')}
+            className="input-field w-full"
+            placeholder="••••••••"
+          />
+          {errors.password && (
+            <p className="mt-1 text-sm text-red-400">{errors.password.message}</p>
+          )}
+        </div>
+
+        <button type="submit" className="btn-primary w-full">
+          Se connecter
+        </button>
+
+        <p className="text-center text-sm text-gray-400">
+          Pas encore de compte ?{' '}
+          <Link to="/register" className="text-game-accent hover:text-game-accent/80">
+            S'inscrire
+          </Link>
+        </p>
+      </form>
+    </div>
+  );
+}
+```
+
+src\pages\Register.tsx:
+```
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { useAuth } from '../hooks/useAuth';
+
+const registerSchema = z.object({
+  username: z.string().min(3, 'Le pseudo doit contenir au moins 3 caractères'),
+  email: z.string().email('Email invalide'),
+  password: z.string().min(6, 'Le mot de passe doit contenir au moins 6 caractères'),
+  confirmPassword: z.string()
+}).refine((data) => data.password === data.confirmPassword, {
+  message: "Les mots de passe ne correspondent pas",
+  path: ["confirmPassword"],
+});
+
+type RegisterFormData = z.infer<typeof registerSchema>;
+
+export function Register() {
+  const { registerUser } = useAuth();
+  const { register, handleSubmit, formState: { errors } } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema)
+  });
+
+  const onSubmit = async (data: RegisterFormData) => {
+    await registerUser(data);
+  };
+
+  return (
+    <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <h1 className="text-3xl font-gaming font-bold text-center mb-8">Inscription</h1>
+      
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 bg-game-foreground p-6 rounded-lg">
+        <div>
+          <label htmlFor="username" className="block text-sm font-medium mb-2">
+            Pseudo
+          </label>
+          <input
+            type="text"
+            id="username"
+            {...register('username')}
+            className="input-field w-full"
+            placeholder="Votre pseudo"
+          />
+          {errors.username && (
+            <p className="mt-1 text-sm text-red-400">{errors.username.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="email" className="block text-sm font-medium mb-2">
+            Email
+          </label>
+          <input
+            type="email"
+            id="email"
+            {...register('email')}
+            className="input-field w-full"
+            placeholder="vous@exemple.com"
+          />
+          {errors.email && (
+            <p className="mt-1 text-sm text-red-400">{errors.email.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="password" className="block text-sm font-medium mb-2">
+            Mot de passe
+          </label>
+          <input
+            type="password"
+            id="password"
+            {...register('password')}
+            className="input-field w-full"
+            placeholder="••••••••"
+          />
+          {errors.password && (
+            <p className="mt-1 text-sm text-red-400">{errors.password.message}</p>
+          )}
+        </div>
+
+        <div>
+          <label htmlFor="confirmPassword" className="block text-sm font-medium mb-2">
+            Confirmer le mot de passe
+          </label>
+          <input
+            type="password"
+            id="confirmPassword"
+            {...register('confirmPassword')}
+            className="input-field w-full"
+            placeholder="••••••••"
+          />
+          {errors.confirmPassword && (
+            <p className="mt-1 text-sm text-red-400">{errors.confirmPassword.message}</p>
+          )}
+        </div>
+
+        <button type="submit" className="btn-primary w-full">
+          S'inscrire
+        </button>
+
+        <p className="text-center text-sm text-gray-400">
+          Déjà un compte ?{' '}
+          <Link to="/login" className="text-game-accent hover:text-game-accent/80">
+            Se connecter
+          </Link>
+        </p>
+      </form>
+    </div>
+  );
+}
+```
+
+src\pages\Tournaments.tsx:
+```
+import React, { useEffect } from 'react';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { Trophy, Users, LogIn } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { useTournaments } from '../hooks/useTournaments';
+import { useAuthStore } from '../store/authStore';
+import { Tournament } from '../types';
+
+export function Tournaments() {
+  const { tournaments, loading, fetchTournaments, joinTournament, leaveTournament } = useTournaments();
+  const { user, isAuthenticated } = useAuthStore();
+
+  useEffect(() => {
+    fetchTournaments();
+  }, [fetchTournaments]);
+
+  const isParticipating = (tournament: Tournament) => {
+    return tournament.participants.some(p => p.id === user?.id);
+  };
+
+  const isOrganizer = (tournament: Tournament) => {
+    return tournament.organizer.id === user?.id;
+  };
+
+  const canJoinTournament = (tournament: Tournament) => {
+    return tournament.participants.length < tournament.maxParticipants;
+  };
+
+  const handleParticipation = async (tournament: Tournament) => {
+    if (isParticipating(tournament)) {
+      await leaveTournament(tournament.id);
+    } else {
+      await joinTournament(tournament.id);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="flex justify-center items-center min-h-[400px]">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-game-accent"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="flex items-center justify-between mb-8">
+        <h1 className="text-3xl font-gaming font-bold">Tournois Disponibles</h1>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {tournaments.map((tournament) => (
+          <div key={tournament.id} className="bg-game-foreground rounded-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <Trophy className="h-6 w-6 text-game-accent" />
+              <span className="bg-game-primary/20 text-game-accent px-3 py-1 rounded-full text-sm">
+                {tournament.format}
+              </span>
+            </div>
+            <h3 className="text-xl font-gaming font-semibold mb-2">
+              {tournament.name}
+            </h3>
+            <p className="text-gray-400 mb-2">
+              {tournament.game}
+            </p>
+            <p className="text-gray-400 mb-4">
+              {format(new Date(tournament.date), "d MMMM yyyy 'à' HH'h'mm", { locale: fr })}
+            </p>
+            <div className="flex items-center space-x-2 mb-4">
+              <Users className="h-5 w-5 text-gray-400" />
+              <span className={`text-gray-400 ${tournament.participants.length >= tournament.maxParticipants ? 'text-red-400' : ''}`}>
+                {tournament.participants.length} / {tournament.maxParticipants} participants
+              </span>
+            </div>
+            <p className="text-sm text-gray-400 mb-4">
+              Organisé par <span className="text-game-accent">{tournament.organizer.username}</span>
+            </p>
+            
+            {!isAuthenticated ? (
+              <Link
+                to="/login"
+                className="w-full btn-primary flex items-center justify-center space-x-2"
+              >
+                <LogIn className="h-4 w-4" />
+                <span>Se connecter pour participer</span>
+              </Link>
+            ) : !isOrganizer(tournament) && (
+              <button
+                onClick={() => handleParticipation(tournament)}
+                disabled={!canJoinTournament(tournament) && !isParticipating(tournament)}
+                className={`w-full ${
+                  isParticipating(tournament)
+                    ? 'btn-secondary'
+                    : canJoinTournament(tournament)
+                    ? 'btn-primary'
+                    : 'btn-secondary opacity-50 cursor-not-allowed'
+                }`}
+              >
+                {isParticipating(tournament)
+                  ? 'Quitter'
+                  : canJoinTournament(tournament)
+                  ? 'Participer'
+                  : 'Tournoi complet'}
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+```
+
+src\services\api.ts:
+```
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: 'http://localhost:5000/api',
+});
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export default api;
+```
+
+src\services\auth.ts:
+```
+import api from './api';
+import { User } from '../types';
+
+export interface LoginData {
+  email: string;
+  password: string;
+}
+
+export interface RegisterData {
+  username: string;
+  email: string;
+  password: string;
+}
+
+export const authService = {
+  async login(data: LoginData) {
+    const response = await api.post<{ user: User; token: string }>('/auth/login', data);
+    localStorage.setItem('token', response.data.token);
+    return response.data;
+  },
+
+  async register(data: RegisterData) {
+    const response = await api.post<{ user: User; token: string }>('/auth/register', data);
+    localStorage.setItem('token', response.data.token);
+    return response.data;
+  },
+
+  logout() {
+    localStorage.removeItem('token');
+  },
+};
+```
+
+src\services\tournaments.ts:
+```
+import api from './api';
+import { Tournament } from '../types';
+
+export interface CreateTournamentData {
+  name: string;
+  game: string;
+  format: 'SOLO' | 'DUO' | 'TEAM';
+  date: string;
+  maxParticipants: number;
+}
+
+export const tournamentService = {
+  async getAll() {
+    const response = await api.get<Tournament[]>('/tournaments');
+    return response.data;
+  },
+
+  async create(data: CreateTournamentData) {
+    const response = await api.post<Tournament>('/tournaments', data);
+    return response.data;
+  },
+
+  async join(tournamentId: string) {
+    const response = await api.post<Tournament>(`/tournaments/${tournamentId}/join`);
+    return response.data;
+  },
+
+  async leave(tournamentId: string) {
+    const response = await api.post<Tournament>(`/tournaments/${tournamentId}/leave`);
+    return response.data;
+  },
+};
+```
+
+src\store\authStore.ts:
+```
+import { create } from 'zustand';
+import { User } from '../types';
+
+interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  login: (user: User) => void;
+  logout: () => void;
+}
+
+export const useAuthStore = create<AuthState>((set) => ({
+  user: null,
+  isAuthenticated: false,
+  login: (user) => set({ user, isAuthenticated: true }),
+  logout: () => set({ user: null, isAuthenticated: false }),
+}));
+```
+
+src\types\index.ts:
+```
+export type User = {
+  id: string;
+  username: string;
+  email: string;
+};
+
+export type Tournament = {
+  id: string;
+  name: string;
+  game: string;
+  format: 'SOLO' | 'DUO' | 'TEAM';
+  date: string;
+  maxParticipants: number;
+  currentParticipants: number;
+  organizer: User;
+  participants: User[];
+};
+```
+
+src\vite-env.d.ts:
+```
+/// <reference types="vite/client" />
+
+```
+
+tailwind.config.js:
+```
+/** @type {import('tailwindcss').Config} */
+export default {
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
+  theme: {
+    extend: {
+      colors: {
+        'game-primary': '#6D28D9',
+        'game-secondary': '#4C1D95',
+        'game-accent': '#F472B6',
+        'game-background': '#0F172A',
+        'game-foreground': '#1E293B',
+      },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+        gaming: ['Orbitron', 'sans-serif'],
+      },
+      backgroundImage: {
+        'gradient-radial': 'radial-gradient(var(--tw-gradient-stops))',
+        'hero-pattern': "url('/src/assets/hero-bg.jpg')",
+      },
+    },
+  },
+  plugins: [],
+};
+```
+
+tsconfig.app.json:
+```
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "react-jsx",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["src"]
+}
+
+```
+
+tsconfig.json:
+```
+{
+  "files": [],
+  "references": [
+    { "path": "./tsconfig.app.json" },
+    { "path": "./tsconfig.node.json" }
+  ]
+}
+
+```
+
+tsconfig.node.json:
+```
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true
+  },
+  "include": ["vite.config.ts"]
+}
+
+```
+
+vite.config.ts:
+```
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port: 3000,
+  },
+});
+```
+

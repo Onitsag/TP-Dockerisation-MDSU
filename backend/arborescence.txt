@@ -1,0 +1,401 @@
+📁 Arborescence du projet
+
+├── src
+│   ├── lib
+│   │   └── prisma.js
+│   ├── middleware
+│   │   ├── authMiddleware.js
+│   │   └── errorMiddleware.js
+│   ├── routes
+│   │   ├── authRoutes.js
+│   │   └── tournamentRoutes.js
+│   └── index.js
+├── .env
+├── .gitignore
+├── package.json
+└── schema.prisma
+
+📄 Contenu des fichiers
+
+.env:
+```
+DATABASE_URL="mysql://docker:docker@localhost:3306/gaming_tournaments"
+JWT_SECRET="your-super-secret-key-change-in-production"
+PORT=5000
+```
+
+.gitignore:
+```
+node_modules
+```
+
+package.json:
+```
+{
+  "name": "gaming-tournament-platform-backend",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "nodemon src/index.js",
+    "start": "node src/index.js"
+  },
+  "dependencies": {
+    "@prisma/client": "^5.10.0",
+    "bcryptjs": "^2.4.3",
+    "chalk": "^5.4.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.18.2",
+    "express-async-handler": "^1.2.0",
+    "inquirer": "^12.5.0",
+    "jsonwebtoken": "^9.0.2",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.3",
+    "prisma": "^5.10.0"
+  }
+}
+
+```
+
+schema.prisma:
+```
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String       @id @default(uuid())
+  username      String       @unique
+  email         String       @unique
+  password      String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  tournaments   Tournament[] @relation("TournamentParticipants")
+  organized     Tournament[] @relation("TournamentOrganizer")
+}
+
+model Tournament {
+  id                String     @id @default(uuid())
+  name             String
+  game             String
+  format           Format
+  date             DateTime
+  maxParticipants  Int
+  createdAt        DateTime   @default(now())
+  updatedAt        DateTime   @updatedAt
+  organizer        User       @relation("TournamentOrganizer", fields: [organizerId], references: [id])
+  organizerId      String
+  participants     User[]     @relation("TournamentParticipants")
+}
+
+enum Format {
+  SOLO
+  DUO
+  TEAM
+}
+```
+
+src\index.js:
+```
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import { errorHandler } from './middleware/errorMiddleware.js';
+import authRoutes from './routes/authRoutes.js';
+import tournamentRoutes from './routes/tournamentRoutes.js';
+
+dotenv.config();
+
+const app = express();
+const port = process.env.PORT || 5000;
+
+app.use(cors());
+app.use(express.json());
+
+// Routes
+app.use('/api/auth', authRoutes);
+app.use('/api/tournaments', tournamentRoutes);
+
+// Error Handler
+app.use(errorHandler);
+
+app.listen(port, "0.0.0.0", () => {
+  console.log(`Server running on port ${port}`);
+});
+
+```
+
+src\lib\prisma.js:
+```
+import { PrismaClient } from '@prisma/client';
+
+export const prisma = new PrismaClient();
+```
+
+src\middleware\authMiddleware.js:
+```
+import jwt from 'jsonwebtoken';
+import { prisma } from '../lib/prisma.js';
+import asyncHandler from 'express-async-handler';
+
+export const protect = asyncHandler(async (req, res, next) => {
+  let token;
+
+  if (req.headers.authorization?.startsWith('Bearer')) {
+    try {
+      token = req.headers.authorization.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      
+      req.user = await prisma.user.findUnique({
+        where: { id: decoded.id },
+        select: { id: true, username: true, email: true }
+      });
+
+      next();
+    } catch (error) {
+      res.status(401);
+      throw new Error('Not authorized, token failed');
+    }
+  }
+
+  if (!token) {
+    res.status(401);
+    throw new Error('Not authorized, no token');
+  }
+});
+```
+
+src\middleware\errorMiddleware.js:
+```
+export const errorHandler = (err, req, res, next) => {
+  const statusCode = res.statusCode === 200 ? 500 : res.statusCode;
+  console.error(err); // Affiche le détail complet de l'erreur dans la console
+  res.status(statusCode).json({
+    message: err.message,
+    stack: err.stack,
+  });
+};
+
+```
+
+src\routes\authRoutes.js:
+```
+import express from 'express';
+import asyncHandler from 'express-async-handler';
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import { prisma } from '../lib/prisma.js';
+
+const router = express.Router();
+
+// Register
+router.post('/register', asyncHandler(async (req, res) => {
+  const { username, email, password } = req.body;
+
+  const userExists = await prisma.user.findFirst({
+    where: {
+      OR: [
+        { email },
+        { username }
+      ]
+    }
+  });
+
+  if (userExists) {
+    res.status(400);
+    throw new Error('User already exists');
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const user = await prisma.user.create({
+    data: {
+      username,
+      email,
+      password: hashedPassword,
+    },
+    select: {
+      id: true,
+      username: true,
+      email: true,
+    }
+  });
+
+  const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+    expiresIn: '30d',
+  });
+
+  res.status(201).json({
+    user,
+    token,
+  });
+}));
+
+// Login
+router.post('/login', asyncHandler(async (req, res) => {
+  const { email, password } = req.body;
+
+  const user = await prisma.user.findUnique({
+    where: { email }
+  });
+
+  if (user && (await bcrypt.compare(password, user.password))) {
+    res.json({
+      user: {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+      },
+      token: jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+        expiresIn: '30d',
+      }),
+    });
+  } else {
+    res.status(401);
+    throw new Error('Invalid email or password');
+  }
+}));
+
+export default router;
+```
+
+src\routes\tournamentRoutes.js:
+```
+import express from 'express';
+import asyncHandler from 'express-async-handler';
+import { protect } from '../middleware/authMiddleware.js';
+import { prisma } from '../lib/prisma.js';
+
+const router = express.Router();
+
+// Get all tournaments
+router.get('/', asyncHandler(async (req, res) => {
+  const tournaments = await prisma.tournament.findMany({
+    include: {
+      organizer: {
+        select: {
+          id: true,
+          username: true,
+          email: true,
+        }
+      },
+      participants: {
+        select: {
+          id: true,
+          username: true,
+          email: true,
+        }
+      }
+    }
+  });
+  res.json(tournaments);
+}));
+
+// Create tournament
+router.post('/', protect, asyncHandler(async (req, res) => {
+  const { name, game, format, date, maxParticipants } = req.body;
+
+  const tournament = await prisma.tournament.create({
+    data: {
+      name,
+      game,
+      format,
+      date: new Date(date),
+      maxParticipants,
+      organizerId: req.user.id,
+    },
+    include: {
+      organizer: {
+        select: {
+          id: true,
+          username: true,
+          email: true,
+        }
+      },
+      participants: {
+        select: {
+          id: true,
+          username: true,
+          email: true,
+        }
+      }
+    }
+  });
+
+  res.status(201).json(tournament);
+}));
+
+// Join tournament
+router.post('/:id/join', protect, asyncHandler(async (req, res) => {
+  const tournamentId = req.params.id;
+
+  const tournament = await prisma.tournament.update({
+    where: { id: tournamentId },
+    data: {
+      participants: {
+        connect: { id: req.user.id }
+      }
+    },
+    include: {
+      organizer: {
+        select: {
+          id: true,
+          username: true,
+          email: true,
+        }
+      },
+      participants: {
+        select: {
+          id: true,
+          username: true,
+          email: true,
+        }
+      }
+    }
+  });
+
+  res.json(tournament);
+}));
+
+// Leave tournament
+router.post('/:id/leave', protect, asyncHandler(async (req, res) => {
+  const tournamentId = req.params.id;
+
+  const tournament = await prisma.tournament.update({
+    where: { id: tournamentId },
+    data: {
+      participants: {
+        disconnect: { id: req.user.id }
+      }
+    },
+    include: {
+      organizer: {
+        select: {
+          id: true,
+          username: true,
+          email: true,
+        }
+      },
+      participants: {
+        select: {
+          id: true,
+          username: true,
+          email: true,
+        }
+      }
+    }
+  });
+
+  res.json(tournament);
+}));
+
+export default router;
+```
+
