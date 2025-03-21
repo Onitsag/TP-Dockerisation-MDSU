@@ -1,42 +1,17 @@
-version: '3.8'
-
 services:
-  frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
-    ports:
-      - "3000:80"
-    depends_on:
-      - backend
-
-  backend:
-    build:
-      context: ./backend
-      dockerfile: Dockerfile
-    ports:
-      - "5000:5000"
-    environment:
-      # Remplacer "localhost" par le nom de service "mariadb"
-      DATABASE_URL: "mysql://docker:docker@mariadb:3306/gaming_tournaments"
-      JWT_SECRET: "your-super-secret-key-change-in-production"
-      PORT: 5000
-    depends_on:
-      - mariadb
-
   mariadb:
     image: mariadb:latest
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: "rootpassword"
-      MYSQL_DATABASE: "gaming_tournaments"
-      MYSQL_USER: "docker"
-      MYSQL_PASSWORD: "docker"
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     volumes:
-      - mariadb_data:/var/lib/mysql
+      - ./mariadb:/var/lib/mysql
     ports:
       - "3306:3306"
-
+  
   phpmyadmin:
     image: phpmyadmin/phpmyadmin:latest
     restart: always
@@ -44,9 +19,23 @@ services:
       - "8080:80"
     environment:
       PMA_HOST: mariadb
-      MYSQL_ROOT_PASSWORD: "rootpassword"
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+    depends_on:
+      - mariadb
+  
+  backend:
+    build: ./backend
+    ports:
+      - "5000:5000"
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      PORT: 5000
     depends_on:
       - mariadb
 
-volumes:
-  mariadb_data:
+  frontend:
+    build: ./frontend
+    ports:
+      - "3000:80"
+    depends_on:
+      - backend
